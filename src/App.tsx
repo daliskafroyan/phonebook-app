@@ -3,11 +3,18 @@ import { columns } from "@/components/phonebook/columns"
 import { DataTable } from "@/components/phonebook/data-table"
 import { useContacts, useAddContact } from "@/hooks/use-contacts"
 import { Toaster } from "sonner"
+import { useState } from "react"
 
 const queryClient = new QueryClient()
 
 function PhonebookContent() {
-  const { data, isLoading } = useContacts()
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(5)
+  
+  const { data, isLoading } = useContacts({
+    page,
+    pageSize,
+  })
   const { mutate: addContact } = useAddContact()
 
   return (
@@ -16,7 +23,14 @@ function PhonebookContent() {
         <h1 className="text-2xl font-bold mb-5">Phonebook</h1>
         <DataTable 
           columns={columns} 
-          data={data || []} 
+          data={data?.data || []} 
+          pageCount={data?.pageCount || 0}
+          currentPage={page}
+          pageSize={pageSize}
+          onPaginationChange={(newPage, newPageSize) => {
+            setPage(newPage)
+            setPageSize(newPageSize)
+          }}
           onAddContact={addContact}
           isLoading={isLoading}
         />

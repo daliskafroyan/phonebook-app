@@ -12,17 +12,37 @@ const transformContact = (contact: ContactRow): PhonebookEntry => ({
     category: contact.category,
   })
 
-export function useContacts() {
+interface UseContactsOptions {
+  page: number
+  pageSize: number
+}
+
+export function useContacts({ page, pageSize }: UseContactsOptions) {
   return useQuery({
-    queryKey: ["contacts"],
+    queryKey: ["contacts", page, pageSize],
     queryFn: async () => {
+      const start = page * pageSize
+      const end = start + pageSize - 1
+
+      // First, get total count
+      const { count } = await supabase
+        .from("contacts")
+        .select("*", { count: "exact", head: true })
+
+      // Then get paginated data
       const { data, error } = await supabase
         .from("contacts")
         .select("*")
         .order("name", { ascending: true })
+        .range(start, end)
 
       if (error) throw error
-      return data.map(transformContact)
+
+      return {
+        data: data.map(transformContact),
+        pageCount: Math.ceil((count || 0) / pageSize),
+        total: count || 0
+      }
     },
   })
 }
